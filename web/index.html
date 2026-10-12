@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UI Spec Checker</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">◧</span>
+    <div>
+      <h1>UI Spec Checker</h1>
+      <p>So sánh bản đã code với bản thiết kế: padding, margin, font chữ, màu sắc</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <form id="form" class="inputs" autocomplete="off">
+    <section class="card">
+      <div class="card-head">
+        <h2><span class="step">1</span> Thiết kế (Design)</h2>
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="figma">Link Figma</button>
+          <button type="button" class="tab" data-tab="upload">Upload ảnh</button>
+        </div>
+      </div>
+      <div class="tab-panel" data-panel="figma">
+        <label class="field">
+          <span>Link tới frame Figma</span>
+          <input type="url" name="figma_url" placeholder="https://www.figma.com/design/AbC123/App?node-id=12-345">
+        </label>
+        <label class="field">
+          <span>Figma personal access token <a href="https://help.figma.com/hc/en-us/articles/8085703771159" target="_blank" rel="noopener">(cách lấy)</a></span>
+          <input type="password" name="figma_token" placeholder="figd_… (để trống nếu server đã cấu hình FIGMA_TOKEN)">
+        </label>
+        <label class="check"><input type="checkbox" id="remember-token"> Ghi nhớ token trên trình duyệt này</label>
+      </div>
+      <div class="tab-panel hidden" data-panel="upload">
+        <div class="drop" data-input="design" tabindex="0">
+          <input type="file" name="design" accept="image/*" hidden>
+          <div class="drop-empty">
+            <strong>Kéo thả ảnh design</strong>
+            <span>hoặc bấm để chọn · dán (Ctrl+V)</span>
+          </div>
+          <img class="drop-preview hidden" alt="">
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="card-head">
+        <h2><span class="step">2</span> Bản code (Screenshot)</h2>
+      </div>
+      <div class="drop" data-input="dev" tabindex="0">
+        <input type="file" name="dev" accept="image/*" hidden>
+        <div class="drop-empty">
+          <strong>Kéo thả screenshot bản dev</strong>
+          <span>hoặc bấm để chọn · dán (Ctrl+V)</span>
+        </div>
+        <img class="drop-preview hidden" alt="">
+      </div>
+    </section>
+
+    <details class="card options">
+      <summary>Tuỳ chọn nâng cao</summary>
+      <div class="grid">
+        <label class="field"><span>Scale ảnh design</span>
+          <select name="design_scale">
+            <option value="auto">Tự động</option><option>1</option><option>2</option><option>3</option><option>4</option>
+          </select>
+        </label>
+        <label class="field"><span>Scale screenshot dev</span>
+          <select name="dev_scale">
+            <option value="auto">Tự động</option><option>1</option><option>1.5</option><option>2</option><option>2.625</option><option>3</option><option>3.5</option><option>4</option>
+          </select>
+        </label>
+        <label class="field"><span>Sai số khoảng cách (px)</span><input type="number" name="tol_spacing" value="2" min="0" step="0.5"></label>
+        <label class="field"><span>Sai số cỡ chữ (px)</span><input type="number" name="tol_font_size" value="1" min="0" step="0.5"></label>
+        <label class="field"><span>Sai số màu (ΔE)</span><input type="number" name="tol_color" value="3" min="0" step="0.5"></label>
+        <label class="field"><span>Ngôn ngữ text (OCR)</span>
+          <select name="lang"><option value="vie+eng">Tiếng Việt + English</option><option value="eng">English</option></select>
+        </label>
+        <label class="field"><span>Bỏ qua phía trên (px, vd. status bar)</span><input type="number" name="ignore_top" value="0" min="0"></label>
+        <label class="field"><span>Bỏ qua phía dưới (px, vd. home bar)</span><input type="number" name="ignore_bottom" value="0" min="0"></label>
+      </div>
+      <div class="checks">
+        <span>Kiểm tra:</span>
+        <label class="check"><input type="checkbox" name="checks" value="spacing" checked> Khoảng cách</label>
+        <label class="check"><input type="checkbox" name="checks" value="padding" checked> Padding / lề</label>
+        <label class="check"><input type="checkbox" name="checks" value="font" checked> Font chữ</label>
+        <label class="check"><input type="checkbox" name="checks" value="color" checked> Màu sắc</label>
+        <label class="check"><input type="checkbox" name="checks" value="size" checked> Kích thước khối</label>
+      </div>
+    </details>
+
+    <div class="actions">
+      <button type="submit" class="primary" id="run">So sánh</button>
+      <span id="status" class="status"></span>
+    </div>
+  </form>
+
+  <section id="results" class="results hidden">
+    <div class="summary" id="summary"></div>
+    <div id="warnings"></div>
+    <div class="toolbar">
+      <div class="seg" id="view-mode">
+        <button type="button" class="active" data-mode="side">Song song</button>
+        <button type="button" data-mode="overlay">Chồng lớp</button>
+      </div>
+      <label class="overlay-ctl hidden">Độ mờ bản dev <input type="range" id="opacity" min="0" max="100" value="50"></label>
+      <label class="overlay-ctl hidden check"><input type="checkbox" id="difference"> Chế độ difference</label>
+      <label class="check"><input type="checkbox" id="show-elements"> Hiện phần tử phát hiện được</label>
+      <span class="spacer"></span>
+      <button type="button" class="ghost" id="export">Tải JSON</button>
+    </div>
+    <div class="workspace">
+      <div class="viewer" id="viewer">
+        <div class="pane" id="pane-design">
+          <div class="pane-title">Design <small id="design-meta"></small></div>
+          <div class="stage"><img id="img-design" alt="design"><svg class="marks"></svg><div class="badges"></div></div>
+        </div>
+        <div class="pane" id="pane-dev">
+          <div class="pane-title">Bản code <small id="dev-meta"></small></div>
+          <div class="stage"><img id="img-dev" alt="dev"><svg class="marks"></svg><div class="badges"></div></div>
+        </div>
+        <div class="pane hidden" id="pane-overlay">
+          <div class="pane-title">Design + bản code (căn theo dòng text đầu tiên)</div>
+          <div class="stage overlay-stage"><img id="img-ov-design" alt=""><img id="img-ov-dev" class="ov-top" alt=""></div>
+        </div>
+      </div>
+      <aside class="issues">
+        <div class="issue-filters" id="filters"></div>
+        <ol id="issue-list"></ol>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
