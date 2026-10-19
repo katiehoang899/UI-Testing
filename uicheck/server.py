@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import pytesseract
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -101,6 +102,10 @@ async def compare(
             figma_url.strip() or None,
             figma_token.strip() or None,
         )
+    except pytesseract.TesseractNotFoundError as e:
+        raise HTTPException(
+            500, "Chưa cài Tesseract OCR trên máy chạy server (xem README) hoặc đặt biến môi trường TESSERACT_CMD."
+        ) from e
     except FigmaError as e:
         raise HTTPException(400, str(e)) from e
     except ValueError as e:

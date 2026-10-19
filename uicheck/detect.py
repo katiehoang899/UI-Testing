@@ -8,6 +8,8 @@ the two are compared.
 from __future__ import annotations
 
 import math
+import os
+import shutil
 
 import cv2
 import numpy as np
@@ -15,6 +17,24 @@ import pytesseract
 
 from .color import RGB, delta_e, dominant_color, lab_distance_map, median_color
 from .models import Analysis, Element, Rect
+
+def _configure_tesseract() -> None:
+    """Find the tesseract binary: TESSERACT_CMD, PATH, or the default Windows install dirs."""
+    candidates = [
+        os.environ.get("TESSERACT_CMD"),
+        shutil.which("tesseract"),
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+        "/opt/homebrew/bin/tesseract",
+        "/usr/local/bin/tesseract",
+    ]
+    for c in candidates:
+        if c and os.path.isfile(c):
+            pytesseract.pytesseract.tesseract_cmd = c
+            return
+
+
+_configure_tesseract()
 
 # Lab (OpenCV 8-bit) difference that counts as an edge between two flat regions.
 EDGE_THRESHOLD = 4

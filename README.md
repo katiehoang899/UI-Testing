@@ -11,30 +11,39 @@ Tool so sánh **screenshot bản đã code** với **bản thiết kế** (ảnh
 
 Tool **không** kiểm tra nội dung chữ hay hình ảnh: text chỉ dùng làm "mốc" để ghép phần tử của design với phần tử của bản code, icon/ảnh chỉ được so vị trí và kích thước.
 
-## Chạy nhanh
+## Chạy trên máy (localhost)
 
-### Docker
+**Bước 1 – cài Tesseract OCR** (chỉ cần làm một lần):
+
+| Hệ điều hành | Cách cài |
+| --- | --- |
+| Windows | Tải bộ cài tại https://github.com/UB-Mannheim/tesseract/wiki, khi cài tích chọn **Vietnamese** trong *Additional language data* |
+| macOS | `brew install tesseract tesseract-lang` |
+| Ubuntu/Debian | `sudo apt install tesseract-ocr tesseract-ocr-vie` |
+
+Cần thêm Python 3.10+ (Windows: https://www.python.org/downloads/, nhớ tích *Add python.exe to PATH*).
+
+**Bước 2 – chạy tool:**
+
+- Windows: double-click `run.bat`
+- macOS / Linux: `./run.sh`
+
+Lần đầu script tự tạo môi trường `.venv` và cài thư viện (1–2 phút), sau đó mở trình duyệt tại http://localhost:8000. Đổi cổng: `PORT=9000 ./run.sh` (Windows: `set PORT=9000` trước khi chạy). Nếu Tesseract cài ở chỗ khác, đặt biến môi trường `TESSERACT_CMD` trỏ tới file `tesseract`/`tesseract.exe`.
+
+<details>
+<summary>Chạy thủ công / Docker</summary>
+
+```bash
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn uicheck.server:app --port 8000
+```
 
 ```bash
 docker build -t uicheck .
 docker run -p 8000:8000 -e FIGMA_TOKEN=figd_xxx uicheck   # FIGMA_TOKEN là tuỳ chọn
 ```
-
-Mở http://localhost:8000.
-
-### Chạy trực tiếp
-
-Cần Python 3.10+ và [Tesseract OCR](https://tesseract-ocr.github.io/tessdoc/Installation.html) kèm gói tiếng Việt:
-
-```bash
-# Ubuntu/Debian
-sudo apt install tesseract-ocr tesseract-ocr-vie
-# macOS
-brew install tesseract tesseract-lang
-
-pip install -r requirements.txt
-uvicorn uicheck.server:app --port 8000
-```
+</details>
 
 ## Cách dùng (giao diện web)
 
